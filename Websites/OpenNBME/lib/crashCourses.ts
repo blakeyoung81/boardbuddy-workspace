@@ -939,3 +939,5 @@ export function getCrashCourseById(id: string): CrashCourse | undefined {
 export function getCrashCourseByDuration(duration: string): CrashCourse | undefined {
   return allCrashCourses.find(course => course.duration === duration);
 }
+// Course marketplace updated
+// Course marketplace updated Fri Nov  7 22:49:06 CST 2025
