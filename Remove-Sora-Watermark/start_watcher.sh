@@ -84,21 +84,75 @@ fi
 LOG_FILE="$SCRIPT_DIR/watcher_startup.log"
 OUTPUT_FOLDER="/Users/blakeyoung/Library/Mobile Documents/com~apple~CloudDocs/Streaming/Removed Watermark"
 
-# Determine if running in background (check if output is redirected or if running from terminal)
-if [ -t 0 ] && [ -t 1 ] && [ -t 2 ]; then
+# Detect if running interactively (Keyboard Maestro shows output)
+INTERACTIVE=false
+if [ -t 1 ] || [ -n "$KMVAR_DisplayResults" ]; then
+    INTERACTIVE=true
+fi
+
+# Determine if running in background or foreground
+if [ "$INTERACTIVE" = true ]; then
+    # Running from Keyboard Maestro - show output but still log
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "🔍 Starting Watermark Remover Watcher..."
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "📁 Watching folder: Big Downloads"
+    echo "📁 Output folder: $OUTPUT_FOLDER"
+    echo ""
+    
+    # Send startup notification
+    osascript -e "display notification \"Watcher is starting...\" with title \"Watermark Remover\" subtitle \"Monitoring Big Downloads folder\"" 2>/dev/null || true
+    
+    # Start in background but show initial output
+    # Make sure we're in the right directory and venv is activated
+    cd "$SCRIPT_DIR" || {
+        echo "❌ ERROR: Could not navigate to script directory"
+        exit 1
+    }
+    
+    # Activate venv explicitly in the nohup command
+    {
+        echo "Starting watcher..." | tee -a "$LOG_FILE"
+        nohup bash -c "source .venv/bin/activate && cd '$SCRIPT_DIR' && python watcher.py" >> "$OUTPUT_FOLDER/watcher_stdout.log" 2>> "$OUTPUT_FOLDER/watcher_stderr.log" &
+        WATCHER_PID=$!
+        echo "Watcher started with PID: $WATCHER_PID" | tee -a "$LOG_FILE"
+        echo "" | tee -a "$LOG_FILE"
+        
+        sleep 2
+        
+        if ps -p $WATCHER_PID > /dev/null 2>&1; then
+            echo "✅ Watcher is running successfully!" | tee -a "$LOG_FILE"
+            echo "📊 PID: $WATCHER_PID" | tee -a "$LOG_FILE"
+            echo "📋 Logs: $OUTPUT_FOLDER/watcher.log" | tee -a "$LOG_FILE"
+            echo "🛑 To stop: kill $WATCHER_PID" | tee -a "$LOG_FILE"
+        else
+            echo "❌ ERROR: Watcher failed to start" | tee -a "$LOG_FILE"
+            echo "📝 Check: $OUTPUT_FOLDER/watcher_stderr.log" | tee -a "$LOG_FILE"
+            tail -20 "$OUTPUT_FOLDER/watcher_stderr.log" 2>/dev/null | tee -a "$LOG_FILE"
+            exit 1
+        fi
+    } 2>&1
+    
+elif [ -t 0 ] && [ -t 1 ] && [ -t 2 ]; then
     # Running in foreground (interactive terminal)
     echo "Starting watcher in foreground mode..."
     echo "Press Ctrl+C to stop"
     python watcher.py
 else
-    # Running in background or from Keyboard Maestro
+    # Running in true background mode
     echo "Starting watcher in background mode..." >> "$LOG_FILE" 2>&1
     
     # Send startup notification
     osascript -e "display notification \"Watcher is starting...\" with title \"Watermark Remover\" subtitle \"Monitoring Big Downloads folder\"" 2>/dev/null || true
     
     # Start watcher in background with logging
-    nohup python watcher.py >> "$OUTPUT_FOLDER/watcher_stdout.log" 2>> "$OUTPUT_FOLDER/watcher_stderr.log" &
+    # Make sure venv is activated
+    cd "$SCRIPT_DIR" || {
+        echo "❌ ERROR: Could not navigate to script directory" >> "$LOG_FILE"
+        exit 1
+    }
+    nohup bash -c "source .venv/bin/activate && cd '$SCRIPT_DIR' && python watcher.py" >> "$OUTPUT_FOLDER/watcher_stdout.log" 2>> "$OUTPUT_FOLDER/watcher_stderr.log" &
     WATCHER_PID=$!
     
     # Wait a moment to see if it started successfully
