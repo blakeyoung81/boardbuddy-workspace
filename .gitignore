@@ -1,0 +1,75 @@
+# Ignore everything by default
+/*
+
+# But include root-level files we want
+!/.gitignore
+!/README.md
+
+# And include the three workspace projects
+!/Chrome extensions/
+!/Keyboard Maestro/
+!/Remove-Sora-Watermark/
+
+# Include all files in those directories recursively
+!/Chrome extensions/**
+!/Keyboard Maestro/**
+!/Remove-Sora-Watermark/**
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Logs
+*.log
+logs/
+
+# Environment variables (ignore all .env files EXCEPT .env.example)
+.env
+.env.local
+.env.*.local
+*.env
+!*.env.example
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+*.zip
+
+# Ignore nested git repositories (keep them separate)
+.git/
+Chrome extensions/BoardBuddy/.git/
+Remove-Sora-Watermark/.git/
+
+
+# Chrome extensions (may contain secrets)
+Chrome extensions/
